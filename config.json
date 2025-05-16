@@ -1,0 +1,17 @@
+{
+    "firebase_project_id": "your-firebase-project-id",
+    "targets": [
+      {
+        "os":             "Android",
+        "previous_version":"1.0.0",
+        "new_version":    "1.1.0",
+        "new_build":      1100
+      },
+      {
+        "os":             "iOS",
+        "new_version":    "1.1.0",
+        "new_build":      2100
+      }
+    ]
+  }
+  
