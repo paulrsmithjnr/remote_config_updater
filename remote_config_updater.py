@@ -6,8 +6,18 @@ from google.auth.transport.requests import AuthorizedSession
 with open('config.json') as f:
     cfg = json.load(f)
 
-PROJECT_ID = cfg['firebase_project_id']
+# Load service account credentials and extract project ID
+with open('credentials/service_account.json') as f:
+    sa_info = json.load(f)
+    PROJECT_ID = sa_info['project_id']
+
 TARGETS    = cfg['targets']
+
+# Color sequence for conditions
+COLOR_SEQUENCE = [
+    'BLUE', 'BROWN', 'CYAN', 'DEEP_ORANGE', 'GREEN',
+    'INDIGO', 'LIME', 'ORANGE', 'PINK', 'PURPLE', 'TEAL'
+]
 
 # 2. Auth setup
 creds = service_account.Credentials.from_service_account_file(
@@ -44,7 +54,7 @@ def discover_latest(template):
         m = COND_REGEX.match(cond['name'])
         if not m:
             continue
-        os_key  = m.group('os').capitalize()
+        os_key  = m.group('os')
         ver     = m.group('version')
         build   = int(m.group('build'))
         if os_key not in latest:
@@ -59,8 +69,18 @@ def discover_latest(template):
                 latest[os_key]['build'] = build
     return latest
 
+def get_next_color(current_color):
+    if not current_color:
+        return COLOR_SEQUENCE[0]
+    try:
+        current_index = COLOR_SEQUENCE.index(current_color)
+        next_index = (current_index + 1) % len(COLOR_SEQUENCE)
+        return COLOR_SEQUENCE[next_index]
+    except ValueError:
+        return COLOR_SEQUENCE[0]
+
 def clone_for_target(template, latest_map, target):
-    os_key       = target['os'].capitalize()
+    os_key       = target['os']
     new_ver      = target['new_version']
     new_build    = int(target['new_build'])
     prev_ver     = target.get('previous_version') or latest_map[os_key]['version']
@@ -75,8 +95,9 @@ def clone_for_target(template, latest_map, target):
     # find matching conditions
     matches = [
        c for c in template['conditions']
-       if f"app.version == '{prev_build}'" in c.get('expression','')
-       and f"device.os == '{os_key.upper()}'" in c.get('expression','')
+       if f"app.build.==(['{prev_build}'])" in c.get('expression','')
+       and COND_REGEX.match(c['name']) is not None
+       and COND_REGEX.match(c['name']).group('os') == os_key
     ]
 
     new_conds = []
@@ -87,8 +108,10 @@ def clone_for_target(template, latest_map, target):
             cond['name']
         )
         new_expr = cond['expression']\
-            .replace(str(prev_build), str(new_build))
-        copy = {**cond, 'name': new_name, 'expression': new_expr}
+            .replace(f"app.build.==(['{prev_build}'])", f"app.build.==(['{new_build}'])")
+        # Get the next color in sequence based on the previous condition's color
+        new_color = get_next_color(cond.get('tagColor'))
+        copy = {**cond, 'name': new_name, 'expression': new_expr, 'tagColor': new_color}
         new_conds.append(copy)
 
     # show preview
