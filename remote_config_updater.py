@@ -144,7 +144,7 @@ def main():
         new_conds, param_maps = clone_for_target(tpl, latest, tgt)
         tpl['conditions'].extend(new_conds)
         for key, old, new in param_maps:
-            val = tpl['parameters'][key]['conditionalValues'].pop(old)
+            val = tpl['parameters'][key]['conditionalValues'][old]
             tpl['parameters'][key]['conditionalValues'][new] = val
         all_new_conds += new_conds
         all_param_maps += param_maps
