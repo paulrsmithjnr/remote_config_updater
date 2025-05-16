@@ -17,7 +17,6 @@ remote_config_updater/
 ## Prerequisites
 
 * Python 3.8 or higher
-* A Firebase project with Remote Config enabled
 * A Service Account JSON key with **Firebase Remote Config Admin** access
 * Network access to call the Firebase Remote Config REST API
 
@@ -62,7 +61,6 @@ Define one or more targets (Android, iOS) and their version/build settings:
 
 ```json
 {
-  "firebase_project_id": "your-firebase-project-id",
   "targets": [
     {
       "os": "Android",             // "Android" or "iOS"

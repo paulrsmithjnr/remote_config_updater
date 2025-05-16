@@ -1,4 +1,3 @@
-import json
 from remote_config_updater import fetch_template, COND_REGEX
 
 # Fetch the current remote config template
