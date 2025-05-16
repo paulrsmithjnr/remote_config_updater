@@ -128,7 +128,9 @@ def clone_for_target(template, latest_map, target):
                 new = old.replace(prev_ver,f"{new_ver}").replace(str(prev_build),str(new_build))
                 param_map.append((key, old, new))
 
-    print("\nParameter mappings:")
+    # Get unique parameter count
+    affected_params = len(set(p for p,_,_ in param_map))
+    print(f"\nParameter mappings ({affected_params} parameters):")
     for p,old,new in param_map:
         print(f"  • {p}: {old} → {new}")
 
