@@ -1,15 +1,14 @@
 {
-    "targets": [
-      {
-        "os":             "Android",
-        "new_version":    "1.0.2",
-        "new_build":      1004
-      },
-      {
-        "os":             "iOS",
-        "new_version":    "1.0.2",
-        "new_build":      1004
-      }
-    ]
-  }
-  
+  "targets": [
+    {
+      "os":             "Android",
+      "new_version":    "1.1.0",
+      "new_build":      1006
+    },
+    {
+      "os":             "iOS",
+      "new_version":    "1.1.0",
+      "new_build":      1006
+    }
+  ]
+}
