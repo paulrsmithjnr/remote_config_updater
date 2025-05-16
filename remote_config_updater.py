@@ -2,7 +2,7 @@ import re, sys, json
 from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
 
-# 1. Load config
+# Load config
 with open('config.json') as f:
     cfg = json.load(f)
 
@@ -19,7 +19,33 @@ COLOR_SEQUENCE = [
     'INDIGO', 'LIME', 'ORANGE', 'PINK', 'PURPLE', 'TEAL'
 ]
 
-# 2. Auth setup
+# --- Colour helpers ---
+
+COLOR_TO_IDX = {c: i for i, c in enumerate(COLOR_SEQUENCE)}
+
+def color_index(color: str) -> int:
+    """Return the colour's index in COLOR_SEQUENCE or -1 if unknown."""
+    return COLOR_TO_IDX.get(color, -1)
+
+def next_color(prev_colors):
+    """Given a list of previous colours, return the next colour in sequence."""
+    highest_idx = max((color_index(c) for c in prev_colors if c), default=-1)
+    return COLOR_SEQUENCE[(highest_idx + 1) % len(COLOR_SEQUENCE)]
+
+def last_color_for_target(template, latest_map, target):
+    """Return the tagColor of the latest condition for the given target OS."""
+    os_key = target['os']
+    prev_build = latest_map[os_key]['build']
+    for cond in template.get('conditions', []):
+        if (
+            f"app.build.==(['{prev_build}'])" in cond.get('expression', '')
+            and COND_REGEX.match(cond['name'])
+            and COND_REGEX.match(cond['name']).group('os') == os_key
+        ):
+            return cond.get('tagColor')
+    return None
+
+# Auth setup
 creds = service_account.Credentials.from_service_account_file(
     'credentials/service_account.json',
     scopes=['https://www.googleapis.com/auth/firebase.remoteconfig']
@@ -79,7 +105,7 @@ def get_next_color(current_color):
     except ValueError:
         return COLOR_SEQUENCE[0]
 
-def clone_for_target(template, latest_map, target):
+def clone_for_target(template, latest_map, target, new_color):
     os_key       = target['os']
     new_ver      = target['new_version']
     new_build    = int(target['new_build'])
@@ -109,8 +135,6 @@ def clone_for_target(template, latest_map, target):
         )
         new_expr = cond['expression']\
             .replace(f"app.build.==(['{prev_build}'])", f"app.build.==(['{new_build}'])")
-        # Get the next color in sequence based on the previous condition's color
-        new_color = get_next_color(cond.get('tagColor'))
         copy = {**cond, 'name': new_name, 'expression': new_expr, 'tagColor': new_color}
         new_conds.append(copy)
 
@@ -140,10 +164,14 @@ def main():
     etag, tpl = fetch_template()
     latest = discover_latest(tpl)
 
+    # uniform next colour for this run
+    prev_colors = [last_color_for_target(tpl, latest, tgt) for tgt in TARGETS]
+    uniform_color = next_color(prev_colors)
+
     all_new_conds = []
     all_param_maps = []
     for tgt in TARGETS:
-        new_conds, param_maps = clone_for_target(tpl, latest, tgt)
+        new_conds, param_maps = clone_for_target(tpl, latest, tgt, uniform_color)
         tpl['conditions'].extend(new_conds)
         for key, old, new in param_maps:
             val = tpl['parameters'][key]['conditionalValues'][old]
