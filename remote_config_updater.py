@@ -94,7 +94,7 @@ def last_color_for_target(template, latest_map, target):
 
 # Auth setup
 creds = service_account.Credentials.from_service_account_file(
-    'credentials/service_account.json',
+    args.service_account,
     scopes=['https://www.googleapis.com/auth/firebase.remoteconfig']
 )
 session = AuthorizedSession(creds)
