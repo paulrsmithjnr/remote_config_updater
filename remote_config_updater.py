@@ -1,4 +1,4 @@
-import re, sys, json, argparse
+import re, sys, json, argparse, tempfile, os
 from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
 import urllib.request
@@ -93,10 +93,28 @@ def last_color_for_target(template, latest_map, target):
     return None
 
 # Auth setup
-creds = service_account.Credentials.from_service_account_file(
-    args.service_account,
-    scopes=['https://www.googleapis.com/auth/firebase.remoteconfig']
-)
+if args.service_account.startswith(('http://', 'https://')):
+    # For URLs, download to a temporary file first
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as temp_file:
+        temp_path = temp_file.name
+        with urllib.request.urlopen(args.service_account) as response:
+            temp_file.write(response.read())
+    
+    try:
+        creds = service_account.Credentials.from_service_account_file(
+            temp_path,
+            scopes=['https://www.googleapis.com/auth/firebase.remoteconfig']
+        )
+    finally:
+        # Clean up temporary file
+        os.unlink(temp_path)
+else:
+    # For local files, use directly
+    creds = service_account.Credentials.from_service_account_file(
+        args.service_account,
+        scopes=['https://www.googleapis.com/auth/firebase.remoteconfig']
+    )
+
 session = AuthorizedSession(creds)
 
 BASE_URL = f"https://firebaseremoteconfig.googleapis.com/v1/projects/{PROJECT_ID}/remoteConfig"
@@ -156,6 +174,11 @@ def clone_for_target(template, latest_map, target, new_color):
     os_key       = target['os']
     new_ver      = target['new_version']
     new_build    = int(target['new_build'])
+    
+    # If no conditions exist yet for this OS, treat as first version
+    if os_key not in latest_map:
+        latest_map[os_key] = {'version': '0.0.0', 'build': 0}
+    
     prev_ver     = target.get('previous_version') or latest_map[os_key]['version']
     prev_build   = latest_map[os_key]['build']
 
