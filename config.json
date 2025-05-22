@@ -2,13 +2,13 @@
   "targets": [
     {
       "os":             "Android",
-      "new_version":    "2.0.0",
-      "new_build":      1025
+      "new_version":    "3.0.0",
+      "new_build":      1300
     },
     {
       "os":             "iOS",
-      "new_version":    "2.0.0",
-      "new_build":      1025
+      "new_version":    "3.0.0",
+      "new_build":      1300
     }
   ]
 }

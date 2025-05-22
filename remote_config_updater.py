@@ -1,17 +1,64 @@
-import re, sys, json
+import re, sys, json, argparse
 from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
+import urllib.request
 
-# Load config
-with open('config.json') as f:
-    cfg = json.load(f)
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Update Firebase Remote Config conditions for iOS and Android apps',
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument('--config', 
+        help='Path or URL to config.json (optional). If not provided, updates both iOS and Android')
+    parser.add_argument('--service-account', required=True,
+        help='Path or URL to Firebase service account credentials JSON file')
+    parser.add_argument('--version', required=True,
+        help='New version number (e.g., 1.0.1)')
+    parser.add_argument('--build', required=True, type=int,
+        help='New build number (e.g., 1001)')
+    return parser.parse_args()
+
+def load_json(path_or_url):
+    """Load JSON from local file or URL"""
+    if path_or_url.startswith(('http://', 'https://')):
+        with urllib.request.urlopen(path_or_url) as response:
+            return json.loads(response.read().decode())
+    else:
+        with open(path_or_url) as f:
+            return json.load(f)
+
+# Parse command line arguments
+args = parse_arguments()
 
 # Load service account credentials and extract project ID
-with open('credentials/service_account.json') as f:
-    sa_info = json.load(f)
-    PROJECT_ID = sa_info['project_id']
+sa_info = load_json(args.service_account)
+PROJECT_ID = sa_info['project_id']
 
-TARGETS    = cfg['targets']
+# Determine targets based on config or default both OS
+if args.config:
+    cfg = load_json(args.config)
+    TARGETS = cfg['targets']
+    
+    # Validate version/build with command line args
+    for target in TARGETS:
+        if target['new_version'] != args.version:
+            raise ValueError(f"Config version {target['new_version']} doesn't match command line version {args.version}")
+        if int(target['new_build']) != args.build:
+            raise ValueError(f"Config build {target['new_build']} doesn't match command line build {args.build}")
+else:
+    # Default to both platforms with command line version/build
+    TARGETS = [
+        {
+            'os': 'Android',
+            'new_version': args.version,
+            'new_build': args.build
+        },
+        {
+            'os': 'iOS',
+            'new_version': args.version,
+            'new_build': args.build
+        }
+    ]
 
 # Color sequence for conditions
 COLOR_SEQUENCE = [

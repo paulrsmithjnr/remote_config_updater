@@ -83,17 +83,27 @@ Define one or more targets (Android, iOS) and their version/build settings:
 
 ## Usage
 
-Run the updater from the project root:
+Run the updater with required arguments:
 
 ```bash
-python remote_config_updater.py
+python remote_config_updater.py --service-account=credentials/service_account.json --version=1.1.0 --build=1100
+```
+
+Optional: specify a config file to target specific platforms:
+```bash
+python remote_config_updater.py --config=config.json --service-account=credentials/service_account.json --version=1.1.0 --build=1100
+```
+
+For help and all available options:
+```bash
+python remote_config_updater.py --help
 ```
 
 1. The script fetches the current Remote Config template and ETag.
 2. It discovers the latest version/build per OS by parsing existing condition names.
 3. It validates that each new version/build is not regressing or colliding.
 4. It filters and clones all conditions matching the previous build & OS, renames them, and updates their expressions.
-5. It updates each parameter’s `conditionalValues` with the new condition keys.
+5. It updates each parameter's `conditionalValues` with the new condition keys.
 6. It prints a preview of all new condition names and parameter mappings.
 7. It prompts you to confirm before pushing changes back to Firebase.
 
