@@ -94,6 +94,11 @@ Optional: specify a config file to target specific platforms:
 python remote_config_updater.py --config=config.json --service-account=credentials/service_account.json --version=1.1.0 --build=1100
 ```
 
+Skip confirmation prompt:
+```bash
+python remote_config_updater.py --service-account=credentials/service_account.json --version=1.1.0 --build=1100 --skip-confirm
+```
+
 For help and all available options:
 ```bash
 python remote_config_updater.py --help

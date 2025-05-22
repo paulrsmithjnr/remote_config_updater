@@ -16,6 +16,8 @@ def parse_arguments():
         help='New version number (e.g., 1.0.1)')
     parser.add_argument('--build', required=True, type=int,
         help='New build number (e.g., 1001)')
+    parser.add_argument('--skip-confirm', action='store_true',
+        help='Skip confirmation and apply changes immediately')
     return parser.parse_args()
 
 def load_json(path_or_url):
@@ -250,9 +252,10 @@ def main():
         all_param_maps += param_maps
 
     # final confirmation
-    ans = input("\nProceed with these changes? [y/N]: ").strip().lower()
-    if ans != 'y':
-        sys.exit("✋ Aborted")
+    if not args.skip_confirm:
+        ans = input("\nProceed with these changes? [y/N]: ").strip().lower()
+        if ans != 'y':
+            sys.exit("✋ Aborted")
 
     push_template(tpl, etag)
 
