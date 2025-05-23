@@ -3,12 +3,12 @@
     {
       "os":             "Android",
       "new_version":    "3.0.0",
-      "new_build":      1300
+      "new_build":      1301
     },
     {
       "os":             "iOS",
       "new_version":    "3.0.0",
-      "new_build":      1300
+      "new_build":      1301
     }
   ]
 }
